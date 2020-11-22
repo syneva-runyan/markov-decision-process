@@ -6,18 +6,19 @@ import taxi
 import numpy as np
 
 
-def run_and_average(alg, transitions, reward, initial_state, discount, env_creator = None, param=0.1, param_key='iter'):
+def run_and_average(alg, transitions, reward, initial_state, discount, env_creator = None, param=0.1, param_key='iter', param2=None, starting_idx=1):
     verbose = False
     times = []
     iters = []
     opt_values = []
-    for x in range(0, 1000):
+    for x in range(starting_idx, 1000):
+        print(x)
         if env_creator != None:
             #print('creating')
             initial_state, transitions, reward = env_creator()
         if x == 999:
             verbose = True
-        results = alg(transitions, reward, initial_state, discount, verbose, param)
+        results = alg(transitions, reward, initial_state, discount, verbose, param, param2)
         times.append(results.time)
         iters.append(getattr(results, param_key))
         opt_values.append(results.V)
@@ -33,22 +34,22 @@ def run_and_average(alg, transitions, reward, initial_state, discount, env_creat
     return avg_time, avg_iters, opt_values.tolist(), results
 
 
-def value_iteration(transitions, reward, initial_state, discount, verbose, epsilon=0.1):
+def value_iteration(transitions, reward, initial_state, discount, verbose, epsilon=0.1, param2=None):
     alg = mdptoolbox.mdp.ValueIteration(epsilon=epsilon, max_iter=9000000000000000000000000000000, transitions=transitions, reward=reward, discount=discount, initial_value=initial_state)
     if verbose == True:
         alg.setVerbose()
     alg.run()
     return alg
 
-def policy_iteration(transitions, rewards, initial_state, discount, verbose, eval_type):
+def policy_iteration(transitions, rewards, initial_state, discount, verbose, eval_type, param2=None):
     alg = mdptoolbox.mdp.PolicyIteration(max_iter=9000000000000000000000000000000, transitions=transitions, reward=rewards, discount=discount, eval_type=eval_type)
     if verbose == True:
         alg.setVerbose()
     alg.run()
     return alg
 
-def q_learning(transitions, reward, param, discount, verbose, n_iter):
-    alg = mdptoolbox.mdp.QLearning(transitions=transitions, reward=reward, discount=discount, n_iter=10000)
+def q_learning(transitions, reward, param, discount, verbose, n_iter, learning_rate=None):
+    alg = mdptoolbox.mdp.QLearning(transitions=transitions, reward=reward, discount=discount, n_iter=n_iter, learning_rate=learning_rate)
     if verbose == True:
         alg.setVerbose()
     alg.run()
@@ -180,7 +181,7 @@ def run_cereal_policy_iteration():
     plot_avg("Cereal Loyalty: Linear Eq", times, "Discount Value", "Avg Time to Run", discounts)
     plot_avg("Cereal Loyalty: Linear Eq", iters, "Discount Value", "Avg Iterations", discounts)
 
-def run_taxi_value_iteration():
+def run_taxi_policy_iteration():
     times = []
     iters = []
     tenths = []
@@ -217,43 +218,102 @@ def run_taxi_value_iteration():
 
 def run_cereal_q_learning():
     print("Starting Cereal Problem, Q Learning")
-    n_iterations = 10000
+    n_iteration = 10000
     times = []
     tenths = []
     mean_discrepancy = []
     values = []
+    n_iterations = []
+    #print("Experimenting with discount values")
+    for i in range(1, 10):
+    #     print("discount")
+        discount = (i) / 10
+    #     print(discount)
+        tenths.append(discount)
+    #     avg_time, avg_mean_discrepancy, opt_values, results = run_and_average(q_learning, cereal.transitions, cereal.reward, None, discount, None, n_iteration, 'mean_discrepancy')
+    #     times.append(avg_time)
+    #     values.append(opt_values)
+    #     mean_discrepancy.append(avg_mean_discrepancy)
+
+    ## plot
+    # plot_avg("Cereal Loyalty: Q Learning", times, "Discount Value", "Avg Time to Run", tenths)
+    # plot_avg("Cereal Loyalty: Q Learning", mean_discrepancy, "Discount Value", "Mean Discrepancy", tenths)
+    # plot_optimal_values("Cereal Loyalty: Q Learning", values, tenths)
+
+    discount = 0.3
+    # times = []
+    # mean_discrepancy = []
+    # values = []
+    # print("Experimenting with n_iterations")
+    # for i in range(10000, 100000, 10000):
+    #     n_iteration = i
+    #     n_iterations.append(n_iteration)
+    #     print("n_iteration")
+    #     print(n_iteration)
+    #     avg_time, avg_mean_discrepancy, opt_values, results = run_and_average(q_learning, cereal.transitions, cereal.reward, None, discount, None, n_iteration, 'mean_discrepancy', 900)
+    #     times.append(avg_time)
+    #     values.append(opt_values)
+    #     mean_discrepancy.append(avg_mean_discrepancy)
+    #     print("Policy")
+    #     print(results.policy)
+        
+    # plot_avg("Cereal Loyalty: Q Learning", times, "N Iterations", "Avg Time to Run", n_iterations)
+    # plot_avg("Cereal Loyalty: Q Learning", mean_discrepancy, "N Iterations", "Mean Discrepancy", n_iterations)
+    # plot_optimal_values("Cereal Loyalty: Q Learning", values, n_iterations, num_states = 4, step=1, by = "Number of Iterations")
+
+    print("Experimenting with Learning Rates")
+    n_iteration = 30000
+    times = []
+    mean_discrepancy = []
+    values = []
+    for i in range(1, 10):
+        print("Learning Rate")
+        lr = (i) / 10
+        print(lr)
+        avg_time, avg_mean_discrepancy, opt_values, results = run_and_average(q_learning, cereal.transitions, cereal.reward, None, discount, None, n_iteration, 'mean_discrepancy', lr, 900)
+        times.append(avg_time)
+        values.append(opt_values)
+        mean_discrepancy.append(avg_mean_discrepancy)
+
+    ## plot
+    plot_avg("Cereal Loyalty: Q Learning", times, "Learning Rate", "Avg Time to Run", tenths)
+    plot_avg("Cereal Loyalty: Q Learning", mean_discrepancy, "Learning Rate", "Mean Discrepancy", tenths)
+    plot_optimal_values("Cereal Loyalty: Q Learning", values, tenths, num_states = 4, step=1, by = "Learning Rate")
+
+def run_taxi_q_learning():
+    print("Starting Cereal Problem, Q Learning")
+    n_iteration = 10000
+    times = []
+    tenths = []
+    mean_discrepancy = []
+    values = []
+    print("Experimenting with discount values")
     for i in range(1, 10):
         print("discount")
         discount = (i) / 10
         print(discount)
         tenths.append(discount)
-        avg_time, avg_mean_discrepancy, opt_values, results = run_and_average(q_learning, cereal.transitions, cereal.reward, None, discount, None, n_iterations, 'mean_discrepancy')
+        avg_time, avg_mean_discrepancy, opt_values, results = run_and_average(q_learning, cereal.transitions, cereal.reward, None, discount, None, n_iteration, 'mean_discrepancy')
         times.append(avg_time)
         values.append(opt_values)
         mean_discrepancy.append(avg_mean_discrepancy)
-        # print("Q")
-        # print(alg.Q)
-        # # print("V")
-        # # print(alg.V)
-        # print("Policy")
-        # print(alg.policy)
-    ## plot
-    # print(mean_discrepancy)
-    # print(times)
-    # print(values)
-    plot_avg("Cereal Loyalty: Q Learning", times, "Discount Value", "Avg Time to Run", tenths)
-    plot_avg("Cereal Loyalty: Q Learning", mean_discrepancy, "Discount Value", "Mean Discrepancy", tenths)
-    plot_optimal_values("Cereal Loyalty: Q Learning", values, tenths)
 
+    # plot
+    plot_avg("Taxi Cab: Q Learning", times, "Discount Value", "Avg Time to Run", tenths)
+    plot_avg("Taxi Cab: Q Learning", iters, "Discount Value", "Avg Iterations", tenths)
+    plot_optimal_values("Taxi Cab: Q Learning", values, tenths, 500, 100)
 
 ## Execute project code
 ### Value Iteration
+#print("Exploring value iteration")
 #run_cereal_val_iteration()
 #run_taxi_value_iteration()
 
 ### Policy Iteration
+#print("Exploring policy iteration")
 #run_cereal_policy_iteration()
-# run_taxi_value_iteration()
+# run_taxi_policy_iteration()
 
 ### QLearning
+print("Exploring Q Learning")
 run_cereal_q_learning()
