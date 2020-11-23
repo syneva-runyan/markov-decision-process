@@ -1095,11 +1095,12 @@ class QLearning(MDP):
             # Updating the value of Q
             # Decaying update coefficient (1/sqrt(n+2)) can be changed
             delta = r + self.discount * self.Q[s_new, :].max() - self.Q[s, a]
-            dQ = (1 / _math.sqrt(n + 2)) * delta
             if self.learning_rate == None:
+                dQ = (1 / _math.sqrt(n + 2)) * delta
                 updated_q = self.Q[s, a] + dQ
             else:
-                updated_q = self.Q[s, a] * self.learning_rate + self.Q[s_new, :].max() * (1-self.learning_rate)
+                dQ = (1-self.learning_rate) * delta
+                updated_q = self.Q[s, a] * self.learning_rate + dQ
 
 
             self.Q[s, a] = updated_q
